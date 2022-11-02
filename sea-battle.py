@@ -75,3 +75,56 @@ class Board:
     def out(self, d):
         return not((0 <= d.x < self.size) and (0 <= d.y < self.size))
 
+    def contour(self, ship, verb=False):
+        near = [
+            (-1, -1), (-1, 0), (-1, 1),
+            (0, -1), (0, 0), (0, 1),
+            (1, -1), (1, 0), (1, 1)
+        ]
+        for d in ship.dots:
+            for dx, dy in near:
+                cur = Dot(d.x + dx, d.y + dy)
+                if not(self.out(cur)) and cur not in self.busy:
+                    if verb:
+                        self.field[cur.x][cur.y] = 'T'
+                    self.busy.append(cur)
+
+    def add_ship(self, ship):
+        for d in ship.dots:
+            if self.out(d) or d in self.busy:
+                raise BoardWrongsShipException()
+        for d in ship.dots:
+            self.field[d.x][d.y] = '■'
+            self.busy.append(d)
+
+        self.ships.append(ship)
+        self.contour(ship)
+
+    def shot(self, d):
+        if self.out(d):
+            raise BoardOutException()
+
+        if d in self.busy:
+            raise BoardUserException()
+
+        self.busy.append(d)
+
+        for ship in self.ships:
+            if d in ship.shooten(d):
+                ship.lives -= 1
+                self.field[d.x][d.y] = 'X'
+                if ship.lives == 0:
+                    self.count += 1
+                    self.contour(ship, verb=True)
+                    print('Корабль убит!')
+                    return False
+                else:
+                    print('Корабль ранен!')
+                    return True
+
+        self.field[d.x][d.y] = 'T'
+        print('Мимо!')
+        return False
+
+    def begin(self):
+        self.busy = []
