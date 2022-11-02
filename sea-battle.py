@@ -8,3 +8,17 @@ class Dot:
 
     def __repr__(self):
         return f"Dot({self.x}, {self.y})"
+
+class BoardException(Exception)
+    pass
+
+class BoardOutException(BoardException)
+    def __str__(self):
+        return "Стреляете мимо поля!"
+
+class BoardUserException(BoardException)
+    def __str__(self):
+        return "Уже стреляли в эту клетку"
+
+class BoardWrongsShipException(BoardException)
+    pass
