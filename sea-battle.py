@@ -64,18 +64,16 @@ class Board:
         self.busy = []
         self.ships = []
 
-    def __str__(self):
-        res = ''
-        res += '  | 1 | 2 | 3 | 4 | 5 | 6 |'
-        for i, row in enumerate(self.field):
-            res += f'\n{i + 1} | ' + ' | '.join(row) + ' |'
+    def add_ship(self, ship):
+        for d in ship.dots:
+            if self.out(d) or d in self.busy:
+                raise BoardWrongsShipException()
+        for d in ship.dots:
+            self.field[d.x][d.y] = '■'
+            self.busy.append(d)
 
-        if self.hid:
-            res = res.replace('■', 'O')
-        return res
-
-    def out(self, d):
-        return not((0 <= d.x < self.size) and (0 <= d.y < self.size))
+        self.ships.append(ship)
+        self.contour(ship)
 
     def contour(self, ship, verb=False):
         near = [
@@ -91,16 +89,18 @@ class Board:
                         self.field[cur.x][cur.y] = 'T'
                     self.busy.append(cur)
 
-    def add_ship(self, ship):
-        for d in ship.dots:
-            if self.out(d) or d in self.busy:
-                raise BoardWrongsShipException()
-        for d in ship.dots:
-            self.field[d.x][d.y] = '■'
-            self.busy.append(d)
+    def __str__(self):
+        res = ''
+        res += '  | 1 | 2 | 3 | 4 | 5 | 6 |'
+        for i, row in enumerate(self.field):
+            res += f'\n{i + 1} | ' + ' | '.join(row) + ' |'
 
-        self.ships.append(ship)
-        self.contour(ship)
+        if self.hid:
+            res = res.replace('■', 'O')
+        return res
+
+    def out(self, d):
+        return not((0 <= d.x < self.size) and (0 <= d.y < self.size))
 
     def shot(self, d):
         if self.out(d):
@@ -136,17 +136,17 @@ class Player:
         self.board = board
         self.enemy = enemy
 
-        def ask(self):
-            raise NotImplementedError()
+    def ask(self):
+        raise NotImplementedError()
 
-        def move(self):
-            while True:
-                try:
-                    target = self.ask()
-                    repeat = self.enemy.shot(target)
-                    return repeat
-                except BoardException as e:
-                    print(e)
+    def move(self):
+        while True:
+            try:
+                target = self.ask()
+                repeat = self.enemy.shot(target)
+                return repeat
+            except BoardException as e:
+                print(e)
 
 class AI(Player):
     def ask(self):
@@ -166,6 +166,7 @@ class User(Player):
             x, y = cords
 
             if not(x.isdigit()) or not(y.isdigit()):
+                print('Введите числа!')
                 continue
 
             x, y = int(x), int(y)
@@ -182,8 +183,14 @@ class Game:
         self.ai = AI(co, pl)
         self.us = User(pl, co)
 
+    def random_board(self):
+        board = None
+        while board is None:
+            board = self.try_board()
+        return board
+
     def try_board(self):
-        lens = [3, 2, 1, 1, 1, 1]
+        lens = [3, 2, 2, 1, 1, 1, 1]
         board = Board(size = self.size)
         attempts = 0
         for l in lens:
@@ -198,12 +205,6 @@ class Game:
                 except BoardWrongsShipException:
                     pass
         board.begin()
-        return board
-
-    def random_board(self):
-        board = None
-        while board is None:
-            board = self.try_board()
         return board
 
     def greet(self):
@@ -250,3 +251,5 @@ class Game:
         self.greet()
         self.loop()
 
+g = Game()
+g.start()
